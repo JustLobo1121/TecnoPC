@@ -7,6 +7,13 @@ bin-release/
 # Other files and folders
 .settings/
 
+# file / folder for lobo1121
+.vscode
+del.md
+*.pyc
+__pycache__/
+temporay_files
+
 # Executables
 *.swf
 *.air
