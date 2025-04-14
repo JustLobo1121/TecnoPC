@@ -1,8 +1,6 @@
 import sys
 
-from package.model import Model
-from package.view import View
-from package.viewmodel import ViewModel
+from package import Model, View, ViewModel
 
 # eliminar ---
 """

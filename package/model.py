@@ -2,7 +2,7 @@ import os, json
 
 class Model:
     def __init__(self):
-        self._filepath = "json/data.json"
+        self._filepath = os.path.join("json", "data.json")
         if not self.check_file():
             try:
                 with open(self._filepath, 'r') as data:
@@ -25,7 +25,7 @@ class Model:
                 data = json.load(data_json)
             return data
         except Exception as e:
-            raise(f"something happend: {e}")
+            raise f"something happend: {e}"
     # modificacion necesaria y terminar conexion con el view pasando el viewmodel:
     # componente
     def actualizar_stock(self, cantidad):

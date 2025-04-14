@@ -43,20 +43,20 @@ class View(BaseWidget):
         # btns
         # (con los botones tienen que conectar y las funcionalidades)
         # - tab 1
-        self._ui_widget.buscar_btn
-        self._ui_widget.add_component_btn
-        self._ui_widget.edit_component_btn
-        self._ui_widget.transfer_btn
+        # self._ui_widget.buscar_btn
+        # self._ui_widget.add_component_btn
+        # self._ui_widget.edit_component_btn
+        # self._ui_widget.transfer_btn
         # - tab 2
-        self._ui_widget.new_sell_btn
-        self._ui_widget.add_item_btn
-        self._ui_widget.cancel_btn
-        self._ui_widget.end_sell_btn
+        # self._ui_widget.new_sell_btn
+        # self._ui_widget.add_item_btn
+        # self._ui_widget.cancel_btn
+        # self._ui_widget.end_sell_btn
         # - tab 3
-        self._ui_widget.add_saleman_btn
-        self._ui_widget.edit_saleman_btn
-        self._ui_widget.view_stats_btn
-        self._ui_widget.calculation_comission
+        # self._ui_widget.add_saleman_btn
+        # self._ui_widget.edit_saleman_btn
+        # self._ui_widget.view_stats_btn
+        # self._ui_widget.calculation_comission
 
     def _handle_dinamic_data(self, tab: int): # es para hacer que los datos aparescan en el tab 2,3
         print(f"Tab {tab} selected")
@@ -84,65 +84,65 @@ class View(BaseWidget):
     def buscar_componentes(self):
         """Ejecuta la búsqueda de componentes según los filtros."""
         # Aquí se implementaría la lógica de búsqueda
-        QMessageBox.information(self, "Búsqueda", "Función de búsqueda no implementada.")
+        QMessageBox.information(self.ui_widget, "Búsqueda", "Función de búsqueda no implementada.")
     
     def mostrar_form_agregar_componente(self):
         """Muestra el formulario para agregar un nuevo componente."""
-        QMessageBox.information(self, "Agregar Componente", 
+        QMessageBox.information(self.ui_widget, "Agregar Componente",
                                "Función para agregar componente no implementada.")
     
     def iniciar_nueva_venta(self):
         """Inicia una nueva venta."""
-        if not self.cliente_edit.text():
-            QMessageBox.warning(self, "Error", "Debe ingresar un cliente.")
+        if not self.ui_widget.cliente_edit.text():
+            QMessageBox.warning(self.ui_widget, "Error", "Debe ingresar un cliente.")
             return
         
         # Obtener vendedor y tienda seleccionados
-        vendedor = self.vendedor_combo.currentData()
-        tienda = self.tienda_combo.currentData()
+        vendedor = self.ui_widget.seller_comboBox.currentData()
+        tienda = self.ui_widget.shopComboBox.currentData()
         
         # Crear nueva venta
         # Aquí se implementaría la lógica con el controlador_ventas
         
-        self.venta_info_label.setText(f"Venta en curso: Cliente {self.cliente_edit.text()}")
-        QMessageBox.information(self, "Nueva Venta", "Venta iniciada correctamente.")
+        self.ui_widget.label_6.setText(f"Venta en curso: Cliente {self.ui_widget.cliente_edit.text()}")
+        QMessageBox.information(self.ui_widget, "Nueva Venta", "Venta iniciada correctamente.")
     
     def agregar_item_venta(self):
         """Agrega un ítem a la venta actual."""
-        QMessageBox.information(self, "Agregar Ítem", 
+        QMessageBox.information(self.ui_widget, "Agregar Ítem",
                                "Función para agregar ítem no implementada.")
     
     def finalizar_venta(self):
         """Finaliza la venta actual."""
-        QMessageBox.information(self, "Finalizar Venta", 
+        QMessageBox.information(self.ui_widget, "Finalizar Venta",
                                "Función para finalizar venta no implementada.")
     
     def cancelar_venta(self):
         """Cancela la venta actual."""
-        self.venta_info_label.setText("No hay venta en curso")
-        QMessageBox.information(self, "Cancelar Venta", 
+        self.ui_widget.label_6.setText("No hay venta en curso")
+        QMessageBox.information(self.ui_widget, "Cancelar Venta",
                                "Venta cancelada correctamente.")
     
     def mostrar_form_agregar_vendedor(self):
         """Muestra el formulario para agregar un nuevo vendedor."""
-        QMessageBox.information(self, "Agregar Vendedor", 
+        QMessageBox.information(self.ui_widget, "Agregar Vendedor",
                                "Función para agregar vendedor no implementada.")
     
     def mostrar_estadisticas_vendedor(self):
         """Muestra estadísticas de ventas del vendedor seleccionado."""
         # Obtener vendedor seleccionado
-        selected_items = self.vendors_table.selectedItems()
+        selected_items = self.ui_widget.salesman_table.selectedItems()
         if not selected_items:
-            QMessageBox.warning(self, "Error", "Debe seleccionar un vendedor.")
+            QMessageBox.warning(self.ui_widget, "Error", "Debe seleccionar un vendedor.")
             return
         
-        QMessageBox.information(self, "Estadísticas", 
+        QMessageBox.information(self.ui_widget, "Estadísticas",
                                "Función para mostrar estadísticas no implementada.")
     
     def calcular_comisiones(self):
         """Calcula las comisiones de los vendedores."""
-        mes = self.mes_combo.currentData()
-        anio = self.anio_combo.currentData()
+        mes = self.ui_widget.month_comboBox.currentData()
+        anio = self.ui_widget.year_comboBox.currentData()
         
-        QMessageBox.information(self, "Comisiones", 
-                               f"Comisiones para {self.mes_combo.currentText()} de {anio} calculadas.")
+        QMessageBox.information(self.ui_widget, "Comisiones",
+                               f"Comisiones para {self.ui_widget.month_comboBox.currentText()} de {anio} calculadas.")
