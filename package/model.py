@@ -1,195 +1,270 @@
+"""
+JSON-based model.
+"""
+import dataclasses
 import json
-import os
+import uuid
+
+
+@dataclasses.dataclass
+class Store:
+    """
+    name: Store name. String.
+
+    address: Store address. String.
+
+    city: Store city. String.
+
+    phone: Store phone. String.
+
+    mail: Store e-mail. String.
+    """
+    name: str
+    address: str
+    city: str
+    phone: str
+    mail: str
+
+
+@dataclasses.dataclass
+class Worker:
+    """
+    name: Worker's name. String.
+
+    last_name: Worker's last name. String.
+
+    phone: Worker's phone. String.
+
+    mail: Worker's e-mail. String.
+    """
+    name: str
+    last_name: str
+    phone: str
+    mail: str
+
+
+@dataclasses.dataclass
+class Product:
+    """
+    brand: Product brand. String.
+
+    model: Product model. String.
+
+    category: Product category. String.
+
+    description: Product description. String.
+
+    price: Product price. Integer.
+    """
+    brand: str
+    model: str
+    category: str
+    description: str
+    price: int
+
+
+class NoSuchKeyError(ValueError):
+    """
+    Subclass of ValueError. Implemented for flexibility.
+    """
+
 
 class Model:
+    """
+    Class of JSON-based model.
+    """
     def __init__(self):
-        self.filepath = os.path.join("json", "data.json")
-        if not self.check_file():
-            try:
-                with open(self.filepath, 'r', encoding="utf-8") as data:
-                    json.dump({"isNew": 0}, self.filepath, indent=4)
-            except Exception as e:
-                print(f"is not posible to create the json: {e}")
-
-    def check_file(self):
-        return os.path.exists(self.filepath)
-    def get_data(self):
         try:
-            with open(self.filepath, "r", encoding="utf-8") as data_json:
-                data = json.load(data_json)
-            return data
-        except Exception as e:
-            raise Exception(f"something happend: {e}") from e
-    # modificacion necesaria y terminar conexion con el view pasando el viewmodel:
-    # componente
-    def actualizar_stock(self, cantidad):
-        """
-        Actualiza el stock del componente.
-        
-        Args:
-            cantidad (int): Cantidad a añadir (positivo) o quitar (negativo) del stock
-            
-        Returns:
-            bool: True si la operación fue exitosa, False en caso contrario
-        """
-        nuevo_stock = self.stock + cantidad
-        if nuevo_stock >= 0:
-            self.stock = nuevo_stock
-            return True
-        return False
+            with open("data.json", encoding="utf-8") as file:
+                self._data: dict = json.load(file)
+        except FileNotFoundError:
+            with open("data.json", "w", encoding="utf-8") as file:
+                json.dump({"stores": [], "workers": [], "products": []}, file)
+            with open("data.json", encoding="utf-8") as file:
+                self._data = json.load(file)
 
-    def obtener_info_completa(self):
+    def add_store(self, store: Store):
         """
-        Retorna la información completa del componente.
-        
-        Returns:
-            dict: Diccionario con todos los atributos del componente
+        Adds a store to the deserialized JSON file.
+        :param store: Store dataclass.
         """
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "tipo": self.tipo,
-            "marca": self.marca,
-            "precio": self.precio,
-            "stock": self.stock,
-            "descripcion": self.descripcion
-        }
-    # ---
-    # vendedor
-    def registrar_venta(self, venta: list):
-        """
-        Registra una nueva venta realizada por el vendedor.
-        
-        Args:
-            venta (Venta): Objeto venta a registrar
-            
-        Returns:
-            bool: True si se registró correctamente
-        """
-        self.ventas.append(venta)
-        return True
+        self._data["stores"].append({
+            "uuid": str(uuid.uuid4()),
+            "name": store.name,
+            "address": store.address,
+            "city": store.city,
+            "phone": store.phone,
+            "mail": store.mail,
+            "workers": [],
+            "products": []
+        })
+        self._save()
 
-    def calcular_comisiones(self, mes, anio):
+    def add_worker(self, worker: Worker):
         """
-        Calcula las comisiones del vendedor en un período específico.
-        
-        Args:
-            mes (int): Mes para calcular comisiones
-            anio (int): Año para calcular comisiones
-            
-        Returns:
-            float: Total de comisiones del período
+        Adds a worker to the deserialized JSON file.
+        :param worker: Worker dataclass.
         """
-        total_ventas = 0
-        for venta in self.ventas:
-            if venta.mes == mes and venta.anio == anio:
-                total_ventas += venta.total
+        self._data["workers"].append({
+            "uuid": str(uuid.uuid4()),
+            "name": worker.name,
+            "lastName": worker.last_name,
+            "phone": worker.phone,
+            "mail": worker.mail
+        })
+        self._save()
 
-        # Comisión del 5% sobre el total de ventas
-        return total_ventas * 0.05
+    def add_product(self, product: Product):
+        """
+        Adds a product to the deserialized JSON file.
+        :param product: Product dataclass.
+        """
+        self._data["products"].append({
+            "uuid": str(uuid.uuid4()),
+            "brand": product.brand,
+            "model": product.model,
+            "category": product.category,
+            "description": product.description,
+            "price": product.price
+        })
+        self._save()
 
-    def obtener_info_vendedor(self):
+    def get_stores(self) -> list:
         """
-        Retorna la información del vendedor.
-        
-        Returns:
-            dict: Diccionario con los datos del vendedor
+        Returns all stores contained in the deserialized JSON file.
+        :return: List of dicts
         """
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "apellido": self.apellido,
-            "email": self.email,
-            "telefono": self.telefono,
-            "tienda": self.tienda.nombre if self.tienda else None,
-            "fecha_contratacion": self.fecha_contratacion
-        }
-    # ---
-    # tienda
-    def agregar_vendedor(self, vendedor):
-        """
-        Agrega un vendedor a la tienda.
-        
-        Args:
-            vendedor (Vendedor): Vendedor a agregar
-            
-        Returns:
-            bool: True si se agregó correctamente
-        """
-        if vendedor not in self.vendedores:
-            self.vendedores.append(vendedor)
-            vendedor.tienda = self
-            return True
-        return False
+        return self._data["stores"]
 
-    def agregar_componente(self, componente, cantidad=1):
+    def get_workers(self) -> list:
         """
-        Agrega un componente al inventario de la tienda.
-        
-        Args:
-            componente (Componente): Componente a agregar
-            cantidad (int, optional): Cantidad a agregar. Default es 1.
-            
-        Returns:
-            bool: True si se agregó correctamente
+        Returns a list of all workers contained in the deserialized JSON file.
+        :return: List of dicts
         """
-        if componente.id in self.inventario:
-            self.inventario[componente.id]["cantidad"] += cantidad
-        else:
-            self.inventario[componente.id] = {
-                "componente": componente,
-                "cantidad": cantidad
-            }
-        return True
+        return self._data["workers"]
 
-    def buscar_componente(self, id_componente):
+    def get_products(self) -> list:
         """
-        Busca un componente en el inventario de la tienda.
-        
-        Args:
-            id_componente (int): ID del componente a buscar
-            
-        Returns:
-            dict: Información del componente si existe, None en caso contrario
+        Returns a list of all products contained in the deserialized JSON file.
+        :return: List of dicts
         """
-        if id_componente in self.inventario:
-            return self.inventario[id_componente]
-        return None
+        return self._data["products"]
 
-    def listar_componentes_por_tipo(self, tipo):
+    def edit_store(self, store_uuid: str, store: Store):
         """
-        Lista todos los componentes de un tipo específico.
-        
-        Args:
-            tipo (str): Tipo de componente a buscar (RAM, Procesador, etc.)
-            
-        Returns:
-            list: Lista de componentes del tipo especificado
-        """
-        componentes = []
-        for item in self.inventario.values():
-            if item["componente"].tipo == tipo:
-                componentes.append({
-                    "componente": item["componente"],
-                    "cantidad": item["cantidad"]
-                })
-        return componentes
+        Edits a store contained in the deserialized JSON file.
 
-    def obtener_info_tienda(self):
+        If no store matches the provided UUID ValueError is raised.
+        :param store_uuid: UUID of store to edit. String.
+        :param store: Instance of Store dataclass.
         """
-        Retorna la información de la tienda.
-        
-        Returns:
-            dict: Diccionario con los datos de la tienda
+        try:
+            index = self._locate_something(store_uuid, "stores")
+        except ValueError as e:
+            raise e
+        self._data["stores"][index].update({
+            "name": store.name,
+            "address": store.address,
+            "city": store.city,
+            "phone": store.phone,
+            "mail": store.mail,
+        })
+        self._save()
+
+    def edit_worker(self, worker_uuid: str, worker: Worker):
         """
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "direccion": self.direccion,
-            "ciudad": self.ciudad,
-            "telefono": self.telefono,
-            "email": self.email,
-            "horario": f"{self.horario_apertura} - {self.horario_cierre}",
-            "vendedores": len(self.vendedores),
-            "componentes_distintos": len(self.inventario)
-        }
+        Edits a worker contained in the deserialized JSON file.
+
+        If no worker matches the provided UUID ValueError is raised.
+        :param worker_uuid: UUID of worker to edit. String.
+        :param worker: Instance of Worker dataclass.
+        """
+        try:
+            index = self._locate_something(worker_uuid, "workers")
+        except ValueError as e:
+            raise e
+        self._data["workers"][index].update({
+            "name": worker.name,
+            "lastName": worker.last_name,
+            "phone": worker.phone,
+            "mail": worker.mail
+        })
+        self._save()
+
+    def edit_product(self, product_uuid: str, product: Product):
+        """
+        Edits a product contained in the deserialized JSON file.
+
+        If no product matches the provided UUID ValueError is raised.
+        :param product_uuid: UUID of product to edit. String.
+        :param product: Instance of Product dataclass.
+        """
+        try:
+            index = self._locate_something(product_uuid, "products")
+        except ValueError as e:
+            raise e
+        self._data["products"][index].update({
+            "brand": product.brand,
+            "model": product.model,
+            "category": product.category,
+            "description": product.description,
+            "price": product.price
+        })
+        self._save()
+
+    def delete_store(self, store_uuid: str):
+        """
+        Deletes a store from the deserialized JSON file.
+
+        If no store matches the provided UUID ValueError is raised.
+        :param store_uuid: UUID of store to delete. String.
+        """
+        try:
+            self._delete_something(store_uuid, "stores")
+        except ValueError as e:
+            raise e
+
+    def delete_worker(self, worker_uuid: str):
+        """
+        Deletes a worker from the deserialized JSON file.
+
+        If no worker matches the provided UUID ValueError is raised.
+        :param worker_uuid: UUID of worker to remove. String.
+        """
+        try:
+            self._delete_something(worker_uuid, "workers")
+        except ValueError as e:
+            raise e
+
+    def delete_product(self, product_uuid: str):
+        """
+        Deletes a product from the deserialized JSON file.
+
+        If no product matches the provided UUID ValueError is raised.
+        :param product_uuid: UUID of product to remove. String.
+        """
+        try:
+            self._delete_something(product_uuid, "products")
+        except ValueError as e:
+            raise e
+
+    def _delete_something(self, value_uuid: str, key: str):
+        try:
+            index = self._locate_something(value_uuid, key)
+        except ValueError as e:
+            raise e
+        del self._data[key][index]
+        self._save()
+
+    def _locate_something(self, value_uuid: str, key: str):
+        if key not in ["stores", "workers", "products"]:
+            raise NoSuchKeyError("No key with such name")
+        for index, value in enumerate(self._data[key]):  # type: int, dict
+            if value["uuid"] == value_uuid:
+                return index
+        raise ValueError("No value with such UUID")
+
+    def _save(self):
+        with open("data.json", "w", encoding="utf-8") as file:
+            # for now let's leave the save indentation at 4 for easier reading
+            json.dump(self._data, file, indent=4)
