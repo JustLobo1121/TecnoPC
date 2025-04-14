@@ -1,31 +1,25 @@
-import os, json
+import json
+import os
 
 class Model:
     def __init__(self):
-        self._filepath = os.path.join("json", "data.json")
+        self.filepath = os.path.join("json", "data.json")
         if not self.check_file():
             try:
-                with open(self._filepath, 'r') as data:
-                    json.dump({"isNew": 0},self._filepath, indent=4)
-                    print(f"has been create the: '{self._filepath}")
+                with open(self.filepath, 'r', encoding="utf-8") as data:
+                    json.dump({"isNew": 0}, self.filepath, indent=4)
             except Exception as e:
                 print(f"is not posible to create the json: {e}")
 
     def check_file(self):
-        try:
-            if os.path.exists(self._filepath):
-                return True  
-        except json.JSONDecodeError:
-            print(f"Error: the './{self._filepath}' is not a json validate.")
-        except Exception as e:
-            print(f"Error: is not reading the './{self._filepath}': {e}.")
+        return os.path.exists(self.filepath)
     def get_data(self):
         try:
-            with open(self._filepath, "r") as data_json:
+            with open(self.filepath, "r", encoding="utf-8") as data_json:
                 data = json.load(data_json)
             return data
         except Exception as e:
-            raise f"something happend: {e}"
+            raise Exception(f"something happend: {e}") from e
     # modificacion necesaria y terminar conexion con el view pasando el viewmodel:
     # componente
     def actualizar_stock(self, cantidad):
@@ -43,7 +37,7 @@ class Model:
             self.stock = nuevo_stock
             return True
         return False
-    
+
     def obtener_info_completa(self):
         """
         Retorna la información completa del componente.
@@ -74,7 +68,7 @@ class Model:
         """
         self.ventas.append(venta)
         return True
-    
+
     def calcular_comisiones(self, mes, anio):
         """
         Calcula las comisiones del vendedor en un período específico.
@@ -90,10 +84,10 @@ class Model:
         for venta in self.ventas:
             if venta.mes == mes and venta.anio == anio:
                 total_ventas += venta.total
-        
+
         # Comisión del 5% sobre el total de ventas
         return total_ventas * 0.05
-    
+
     def obtener_info_vendedor(self):
         """
         Retorna la información del vendedor.
@@ -127,7 +121,7 @@ class Model:
             vendedor.tienda = self
             return True
         return False
-    
+
     def agregar_componente(self, componente, cantidad=1):
         """
         Agrega un componente al inventario de la tienda.
@@ -147,7 +141,7 @@ class Model:
                 "cantidad": cantidad
             }
         return True
-    
+
     def buscar_componente(self, id_componente):
         """
         Busca un componente en el inventario de la tienda.
@@ -161,7 +155,7 @@ class Model:
         if id_componente in self.inventario:
             return self.inventario[id_componente]
         return None
-    
+
     def listar_componentes_por_tipo(self, tipo):
         """
         Lista todos los componentes de un tipo específico.
@@ -180,7 +174,7 @@ class Model:
                     "cantidad": item["cantidad"]
                 })
         return componentes
-    
+
     def obtener_info_tienda(self):
         """
         Retorna la información de la tienda.
