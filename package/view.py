@@ -59,7 +59,6 @@ class View(BaseWidget):
         # self._ui_widget.calculation_comission
 
     def _handle_dinamic_data(self, tab: int): # es para hacer que los datos aparescan en el tab 2,3
-        print(f"Tab {tab} selected")
         
         if tab == 1:
             for salesman in self._salesmans:
