@@ -1,26 +1,7 @@
+# pylint: disable=C0114,I1101
 import sys
 
-from package.model import Model
-from package.view import View
-from package.viewmodel import ViewModel
-
-# eliminar ---
-"""
-def crear_datos_ejemplo():    
-    # Agregar componentes al inventario de las tiendas
-    tienda_bosquemar.agregar_componente(ram, 10)
-    tienda_bosquemar.agregar_componente(procesador, 5)
-    tienda_mirasol.agregar_componente(ssd, 8)
-    tienda_vallevolcanes.agregar_componente(ram, 15)
-    tienda_vallevolcanes.agregar_componente(ssd, 10)
-    
-    # Lista de tiendas y vendedores
-    tiendas = [tienda_bosquemar, tienda_mirasol, tienda_vallevolcanes]
-    vendedores = [vendedor1, vendedor2, vendedor3]
-    
-    return tiendas, vendedores
-"""
-# ---
+from package import Model, View, ViewModel
 
 if __name__ == "__main__":
     from PySide6 import QtWidgets
