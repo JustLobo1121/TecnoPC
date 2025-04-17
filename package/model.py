@@ -63,24 +63,6 @@ class Product:
     price: int
 
 
-class NoSuchKeyError(ValueError):
-    """
-    Subclass of ValueError. Implemented for flexibility.
-    """
-
-
-class NoSuchUUIDError(ValueError):
-    """
-    Subclass of ValueError. Implemented for flexibility.
-    """
-
-
-class ValueMismatchError(ValueError):
-    """
-    Subclass of ValueError. Implemented for flexibility.
-    """
-
-
 class Model:
     """
     JSON-based model class.
@@ -92,6 +74,8 @@ class Model:
         except FileNotFoundError:
             self._data = json.loads('{"stores": [], "workers": [], "products": []}')
             self._save()
+        except json.decoder.JSONDecodeError as e:
+            raise RuntimeError(f"JSON decoding error, manual intervention needed: {e}") from e
 
     def add_store(self, store: Store):
         """
@@ -166,7 +150,7 @@ class Model:
 
         If the provided index is invalid IndexError is raised.
 
-        If a mismatch between the index and UUID is present ValueMismatchError is raised.
+        If a mismatch between the index and UUID is present ValueError is raised.
         :param index: Index to edit.
         :param uuid: UUID to edit.
         :param store: Instance of Store dataclass.
@@ -185,7 +169,7 @@ class Model:
 
         If the provided index is invalid IndexError is raised.
 
-        If a mismatch between the index and UUID is present ValueMismatchError is raised.
+        If a mismatch between the index and UUID is present ValueError is raised.
         :param index: Index to edit.
         :param uuid: UUID to edit.
         :param worker: Instance of Worker dataclass.
@@ -203,7 +187,7 @@ class Model:
 
         If the provided index is invalid IndexError is raised.
 
-        If a mismatch between the index and UUID is present ValueMismatchError is raised.
+        If a mismatch between the index and UUID is present ValueError is raised.
         :param index: Index to edit.
         :param uuid: UUID to edit.
         :param product: Instance of Product dataclass.
@@ -222,7 +206,7 @@ class Model:
 
         If the provided index is invalid IndexError is raised.
 
-        If nothing matches the provided UUID NoSuchUUIDError is raised.
+        If nothing matches the provided UUID ValueError is raised.
         :param index: Index to delete.
         :param uuid: UUID to delete.
         """
@@ -234,7 +218,7 @@ class Model:
 
         If the provided index is invalid IndexError is raised.
 
-        If nothing matches the provided UUID NoSuchUUIDError is raised.
+        If nothing matches the provided UUID ValueError is raised.
         :param index: Index to delete.
         :param uuid: UUID to delete.
         """
@@ -246,7 +230,7 @@ class Model:
 
         If the provided index is invalid IndexError is raised.
 
-        If nothing matches the provided UUID NoSuchUUIDError is raised.
+        If nothing matches the provided UUID ValueError is raised.
         :param index: Index to delete.
         :param uuid: UUID to delete.
         """
@@ -254,16 +238,17 @@ class Model:
 
     def _edit_value(self, key: str, index: int, uuid: str, payload: dict[str, int | str]):
         if self._data[key][index]["uuid"] != uuid:
-            raise ValueMismatchError("Mismatch between index and UUID")
+            raise ValueError("Mismatch between index and UUID")
         self._data[key][index].update(payload)
         self._save()
 
     def _delete_value(self, key: str, index: int, uuid: str):
         if key not in ["stores", "workers", "products"]:
-            raise NoSuchKeyError("No key with such name")
+            return
         if self._data[key][index]["uuid"] != uuid:
-            raise ValueMismatchError("Mismatch between index and UUID")
+            raise ValueError("Mismatch between index and UUID")
         del self._data[key][index]
+        self._save()
 
     def _save(self):
         with open("data.json", "w", encoding="utf-8") as file:
