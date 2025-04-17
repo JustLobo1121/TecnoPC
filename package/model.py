@@ -1,23 +1,23 @@
 """
-JSON-based model.
+JSON-based model implementation.
 """
-import dataclasses
+from dataclasses import dataclass
 import json
-import uuid
+from uuid import uuid4
 
 
-@dataclasses.dataclass
+@dataclass
 class Store:
     """
-    name: Store name. String.
+    name: Store name.
 
-    address: Store address. String.
+    address: Store address.
 
-    city: Store city. String.
+    city: Store city.
 
-    phone: Store phone. String.
+    phone: Store phone.
 
-    mail: Store e-mail. String.
+    mail: Store e-mail.
     """
     name: str
     address: str
@@ -26,16 +26,16 @@ class Store:
     mail: str
 
 
-@dataclasses.dataclass
+@dataclass
 class Worker:
     """
-    name: Worker's name. String.
+    name: Worker's name.
 
-    last_name: Worker's last name. String.
+    last_name: Worker's last name.
 
-    phone: Worker's phone. String.
+    phone: Worker's phone.
 
-    mail: Worker's e-mail. String.
+    mail: Worker's e-mail.
     """
     name: str
     last_name: str
@@ -43,18 +43,18 @@ class Worker:
     mail: str
 
 
-@dataclasses.dataclass
+@dataclass
 class Product:
     """
-    brand: Product brand. String.
+    brand: Product brand.
 
-    model: Product model. String.
+    model: Product model.
 
-    category: Product category. String.
+    category: Product category.
 
-    description: Product description. String.
+    description: Product description.
 
-    price: Product price. Integer.
+    price: Product price.
     """
     brand: str
     model: str
@@ -69,19 +69,29 @@ class NoSuchKeyError(ValueError):
     """
 
 
+class NoSuchUUIDError(ValueError):
+    """
+    Subclass of ValueError. Implemented for flexibility.
+    """
+
+
+class ValueMismatchError(ValueError):
+    """
+    Subclass of ValueError. Implemented for flexibility.
+    """
+
+
 class Model:
     """
-    Class of JSON-based model.
+    JSON-based model class.
     """
     def __init__(self):
         try:
             with open("data.json", encoding="utf-8") as file:
                 self._data: dict = json.load(file)
         except FileNotFoundError:
-            with open("data.json", "w", encoding="utf-8") as file:
-                json.dump({"stores": [], "workers": [], "products": []}, file)
-            with open("data.json", encoding="utf-8") as file:
-                self._data = json.load(file)
+            self._data = json.loads('{"stores": [], "workers": [], "products": []}')
+            self._save()
 
     def add_store(self, store: Store):
         """
@@ -89,7 +99,7 @@ class Model:
         :param store: Store dataclass.
         """
         self._data["stores"].append({
-            "uuid": str(uuid.uuid4()),
+            "uuid": str(uuid4()),
             "name": store.name,
             "address": store.address,
             "city": store.city,
@@ -106,7 +116,7 @@ class Model:
         :param worker: Worker dataclass.
         """
         self._data["workers"].append({
-            "uuid": str(uuid.uuid4()),
+            "uuid": str(uuid4()),
             "name": worker.name,
             "lastName": worker.last_name,
             "phone": worker.phone,
@@ -120,7 +130,7 @@ class Model:
         :param product: Product dataclass.
         """
         self._data["products"].append({
-            "uuid": str(uuid.uuid4()),
+            "uuid": str(uuid4()),
             "brand": product.brand,
             "model": product.model,
             "category": product.category,
@@ -129,140 +139,131 @@ class Model:
         })
         self._save()
 
-    def get_stores(self) -> list:
+    def get_stores(self) -> list[dict]:
         """
         Returns all stores contained in the deserialized JSON file.
         :return: List of dicts
         """
         return self._data["stores"]
 
-    def get_workers(self) -> list:
+    def get_workers(self) -> list[dict]:
         """
         Returns a list of all workers contained in the deserialized JSON file.
         :return: List of dicts
         """
         return self._data["workers"]
 
-    def get_products(self) -> list:
+    def get_products(self) -> list[dict]:
         """
         Returns a list of all products contained in the deserialized JSON file.
         :return: List of dicts
         """
         return self._data["products"]
 
-    def edit_store(self, store_uuid: str, store: Store):
+    def edit_store(self, index: int, uuid: str, store: Store):
         """
         Edits a store contained in the deserialized JSON file.
 
-        If no store matches the provided UUID ValueError is raised.
-        :param store_uuid: UUID of store to edit. String.
+        If the provided index is invalid IndexError is raised.
+
+        If a mismatch between the index and UUID is present ValueMismatchError is raised.
+        :param index: Index to edit.
+        :param uuid: UUID to edit.
         :param store: Instance of Store dataclass.
         """
-        try:
-            index = self._locate_something(store_uuid, "stores")
-        except ValueError as e:
-            raise e
-        self._data["stores"][index].update({
+        self._edit_value("stores", index, uuid, {
             "name": store.name,
             "address": store.address,
             "city": store.city,
             "phone": store.phone,
             "mail": store.mail,
         })
-        self._save()
 
-    def edit_worker(self, worker_uuid: str, worker: Worker):
+    def edit_worker(self, index: int, uuid: str, worker: Worker):
         """
         Edits a worker contained in the deserialized JSON file.
 
-        If no worker matches the provided UUID ValueError is raised.
-        :param worker_uuid: UUID of worker to edit. String.
+        If the provided index is invalid IndexError is raised.
+
+        If a mismatch between the index and UUID is present ValueMismatchError is raised.
+        :param index: Index to edit.
+        :param uuid: UUID to edit.
         :param worker: Instance of Worker dataclass.
         """
-        try:
-            index = self._locate_something(worker_uuid, "workers")
-        except ValueError as e:
-            raise e
-        self._data["workers"][index].update({
+        self._edit_value("workers", index, uuid, {
             "name": worker.name,
             "lastName": worker.last_name,
             "phone": worker.phone,
             "mail": worker.mail
         })
-        self._save()
 
-    def edit_product(self, product_uuid: str, product: Product):
+    def edit_product(self, index: int, uuid: str, product: Product):
         """
         Edits a product contained in the deserialized JSON file.
 
-        If no product matches the provided UUID ValueError is raised.
-        :param product_uuid: UUID of product to edit. String.
+        If the provided index is invalid IndexError is raised.
+
+        If a mismatch between the index and UUID is present ValueMismatchError is raised.
+        :param index: Index to edit.
+        :param uuid: UUID to edit.
         :param product: Instance of Product dataclass.
         """
-        try:
-            index = self._locate_something(product_uuid, "products")
-        except ValueError as e:
-            raise e
-        self._data["products"][index].update({
+        self._edit_value("products", index, uuid, {
             "brand": product.brand,
             "model": product.model,
             "category": product.category,
             "description": product.description,
             "price": product.price
         })
-        self._save()
 
-    def delete_store(self, store_uuid: str):
+    def delete_store(self, index: int, uuid: str):
         """
         Deletes a store from the deserialized JSON file.
 
-        If no store matches the provided UUID ValueError is raised.
-        :param store_uuid: UUID of store to delete. String.
-        """
-        try:
-            self._delete_something(store_uuid, "stores")
-        except ValueError as e:
-            raise e
+        If the provided index is invalid IndexError is raised.
 
-    def delete_worker(self, worker_uuid: str):
+        If nothing matches the provided UUID NoSuchUUIDError is raised.
+        :param index: Index to delete.
+        :param uuid: UUID to delete.
+        """
+        self._delete_value("stores", index, uuid)
+
+    def delete_worker(self, index: int, uuid: str):
         """
         Deletes a worker from the deserialized JSON file.
 
-        If no worker matches the provided UUID ValueError is raised.
-        :param worker_uuid: UUID of worker to remove. String.
-        """
-        try:
-            self._delete_something(worker_uuid, "workers")
-        except ValueError as e:
-            raise e
+        If the provided index is invalid IndexError is raised.
 
-    def delete_product(self, product_uuid: str):
+        If nothing matches the provided UUID NoSuchUUIDError is raised.
+        :param index: Index to delete.
+        :param uuid: UUID to delete.
+        """
+        self._delete_value("workers", index, uuid)
+
+    def delete_product(self, index: int, uuid: str):
         """
         Deletes a product from the deserialized JSON file.
 
-        If no product matches the provided UUID ValueError is raised.
-        :param product_uuid: UUID of product to remove. String.
-        """
-        try:
-            self._delete_something(product_uuid, "products")
-        except ValueError as e:
-            raise e
+        If the provided index is invalid IndexError is raised.
 
-    def _delete_something(self, value_uuid: str, key: str):
-        try:
-            index = self._locate_something(value_uuid, key)
-        except ValueError as e:
-            raise e
-        del self._data[key][index]
+        If nothing matches the provided UUID NoSuchUUIDError is raised.
+        :param index: Index to delete.
+        :param uuid: UUID to delete.
+        """
+        self._delete_value("products", index, uuid)
+
+    def _edit_value(self, key: str, index: int, uuid: str, payload: dict[str, int | str]):
+        if self._data[key][index]["uuid"] != uuid:
+            raise ValueMismatchError("Mismatch between index and UUID")
+        self._data[key][index].update(payload)
         self._save()
 
-    def _locate_something(self, value_uuid: str, key: str):
+    def _delete_value(self, key: str, index: int, uuid: str):
         if key not in ["stores", "workers", "products"]:
             raise NoSuchKeyError("No key with such name")
-        for index, value in enumerate(self._data[key]):  # type: int, dict
-            if value["uuid"] == value_uuid:
-                return index
-        raise ValueError("No value with such UUID")
+        if self._data[key][index]["uuid"] != uuid:
+            raise ValueMismatchError("Mismatch between index and UUID")
+        del self._data[key][index]
 
     def _save(self):
         with open("data.json", "w", encoding="utf-8") as file:
