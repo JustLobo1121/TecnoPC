@@ -139,24 +139,24 @@ class Model:
         })
         self._save()
 
-    def get_stores(self) -> list[dict]:
+    def get_stores(self) -> list:
         """
         Returns all stores contained in the deserialized JSON file.
-        :return: List of dicts
+        :return: List of dicts or empty list
         """
         return self._data["stores"]
 
-    def get_workers(self) -> list[dict]:
+    def get_workers(self) -> list:
         """
         Returns a list of all workers contained in the deserialized JSON file.
-        :return: List of dicts
+        :return: List of dicts or empty list
         """
         return self._data["workers"]
 
-    def get_products(self) -> list[dict]:
+    def get_products(self) -> list:
         """
         Returns a list of all products contained in the deserialized JSON file.
-        :return: List of dicts
+        :return: List of dicts or empty list
         """
         return self._data["products"]
 
