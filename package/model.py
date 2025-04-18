@@ -1,24 +1,11 @@
-"""
-JSON-based model implementation.
-"""
-from dataclasses import dataclass
+import dataclasses
 import json
-from uuid import uuid4
+import time
+import uuid
 
 
-@dataclass
+@dataclasses.dataclass
 class Store:
-    """
-    name: Store name.
-
-    address: Store address.
-
-    city: Store city.
-
-    phone: Store phone.
-
-    mail: Store e-mail.
-    """
     name: str
     address: str
     city: str
@@ -26,36 +13,16 @@ class Store:
     mail: str
 
 
-@dataclass
+@dataclasses.dataclass
 class Worker:
-    """
-    name: Worker's name.
-
-    last_name: Worker's last name.
-
-    phone: Worker's phone.
-
-    mail: Worker's e-mail.
-    """
     name: str
     last_name: str
     phone: str
     mail: str
 
 
-@dataclass
+@dataclasses.dataclass
 class Product:
-    """
-    brand: Product brand.
-
-    model: Product model.
-
-    category: Product category.
-
-    description: Product description.
-
-    price: Product price.
-    """
     brand: str
     model: str
     category: str
@@ -63,194 +30,231 @@ class Product:
     price: int
 
 
+@dataclasses.dataclass
+class Manager(Worker):
+    password: str
+
+
 class Model:
-    """
-    JSON-based model class.
-    """
     def __init__(self):
         try:
             with open("data.json", encoding="utf-8") as file:
                 self._data: dict = json.load(file)
         except FileNotFoundError:
-            self._data = json.loads('{"stores": [], "workers": [], "products": []}')
+            self._data = json.loads('{"stores": [], "workers": [], "products": [], "managers": []}')
             self._save()
         except json.decoder.JSONDecodeError as e:
             raise RuntimeError(f"JSON decoding error, manual intervention needed: {e}") from e
 
     def add_store(self, store: Store):
-        """
-        Adds a store to the deserialized JSON file.
-        :param store: Store dataclass.
-        """
+        store_uuid = str(uuid.uuid4())
         self._data["stores"].append({
-            "uuid": str(uuid4()),
+            "uuid": store_uuid,
             "name": store.name,
             "address": store.address,
             "city": store.city,
             "phone": store.phone,
             "mail": store.mail,
             "workers": [],
-            "products": []
+            "products": [],
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
         })
         self._save()
+        return store_uuid
 
     def add_worker(self, worker: Worker):
-        """
-        Adds a worker to the deserialized JSON file.
-        :param worker: Worker dataclass.
-        """
+        worker_uuid = str(uuid.uuid4())
         self._data["workers"].append({
-            "uuid": str(uuid4()),
+            "uuid": worker_uuid,
             "name": worker.name,
             "lastName": worker.last_name,
             "phone": worker.phone,
-            "mail": worker.mail
+            "mail": worker.mail,
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
         })
         self._save()
+        return worker_uuid
 
     def add_product(self, product: Product):
-        """
-        Adds a product to the deserialized JSON file.
-        :param product: Product dataclass.
-        """
+        product_uuid = str(uuid.uuid4())
         self._data["products"].append({
-            "uuid": str(uuid4()),
+            "uuid": product_uuid,
             "brand": product.brand,
             "model": product.model,
             "category": product.category,
             "description": product.description,
-            "price": product.price
+            "price": product.price,
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
         })
         self._save()
+        return product_uuid
 
     def get_stores(self) -> list:
-        """
-        Returns all stores contained in the deserialized JSON file.
-        :return: List of dicts or empty list
-        """
         return self._data["stores"]
 
     def get_workers(self) -> list:
-        """
-        Returns a list of all workers contained in the deserialized JSON file.
-        :return: List of dicts or empty list
-        """
         return self._data["workers"]
 
     def get_products(self) -> list:
-        """
-        Returns a list of all products contained in the deserialized JSON file.
-        :return: List of dicts or empty list
-        """
         return self._data["products"]
 
-    def edit_store(self, index: int, uuid: str, store: Store):
-        """
-        Edits a store contained in the deserialized JSON file.
-
-        If the provided index is invalid IndexError is raised.
-
-        If a mismatch between the index and UUID is present ValueError is raised.
-        :param index: Index to edit.
-        :param uuid: UUID to edit.
-        :param store: Instance of Store dataclass.
-        """
-        self._edit_value("stores", index, uuid, {
+    def edit_store(self, store_uuid: str, store: Store):
+        self._edit_entity("stores", store_uuid, {
             "name": store.name,
             "address": store.address,
             "city": store.city,
             "phone": store.phone,
             "mail": store.mail,
+            "updatedAt": f"{int(time.time())}"
         })
 
-    def edit_worker(self, index: int, uuid: str, worker: Worker):
-        """
-        Edits a worker contained in the deserialized JSON file.
-
-        If the provided index is invalid IndexError is raised.
-
-        If a mismatch between the index and UUID is present ValueError is raised.
-        :param index: Index to edit.
-        :param uuid: UUID to edit.
-        :param worker: Instance of Worker dataclass.
-        """
-        self._edit_value("workers", index, uuid, {
+    def edit_worker(self, worker_uuid: str, worker: Worker):
+        self._edit_entity("workers", worker_uuid, {
             "name": worker.name,
             "lastName": worker.last_name,
             "phone": worker.phone,
-            "mail": worker.mail
+            "mail": worker.mail,
+            "updatedAt": f"{int(time.time())}"
         })
 
-    def edit_product(self, index: int, uuid: str, product: Product):
-        """
-        Edits a product contained in the deserialized JSON file.
-
-        If the provided index is invalid IndexError is raised.
-
-        If a mismatch between the index and UUID is present ValueError is raised.
-        :param index: Index to edit.
-        :param uuid: UUID to edit.
-        :param product: Instance of Product dataclass.
-        """
-        self._edit_value("products", index, uuid, {
+    def edit_product(self, product_uuid: str, product: Product):
+        self._edit_entity("products", product_uuid, {
             "brand": product.brand,
             "model": product.model,
             "category": product.category,
             "description": product.description,
-            "price": product.price
+            "price": product.price,
+            "updatedAt": f"{int(time.time())}"
         })
 
-    def delete_store(self, index: int, uuid: str):
-        """
-        Deletes a store from the deserialized JSON file.
+    def delete_store(self, store_uuid: str):
+        self._delete_entity("stores", store_uuid)
 
-        If the provided index is invalid IndexError is raised.
+    def delete_worker(self, worker_uuid: str):
+        self._delete_entity("workers", worker_uuid)
 
-        If nothing matches the provided UUID ValueError is raised.
-        :param index: Index to delete.
-        :param uuid: UUID to delete.
-        """
-        self._delete_value("stores", index, uuid)
+    def delete_product(self, product_uuid: str):
+        self._delete_entity("products", product_uuid)
 
-    def delete_worker(self, index: int, uuid: str):
-        """
-        Deletes a worker from the deserialized JSON file.
+    def add_product_to_store(self, store_uuid: str, product_uuid: str):
+        index = self._locate_entity("stores", store_uuid)
+        self._data["stores"][index]["products"].append({
+            "uuid": product_uuid,
+            "inStock": None,
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
+        })
+        self._save()
 
-        If the provided index is invalid IndexError is raised.
+    def get_products_in_store(self, store_uuid: str):
+        index = self._locate_entity("stores", store_uuid)
+        return self._data["stores"][index]["products"]
 
-        If nothing matches the provided UUID ValueError is raised.
-        :param index: Index to delete.
-        :param uuid: UUID to delete.
-        """
-        self._delete_value("workers", index, uuid)
+    def edit_product_stock(self, store_uuid: str, product_uuid: str, stock: int):
+        i, j = self._locate_nested_entity(["stores", "products"], [store_uuid, product_uuid])
+        self._data["stores"][i]["products"][j].update({
+            "inStock": stock,
+            "updatedAt": f"{int(time.time())}"
+        })
+        self._save()
 
-    def delete_product(self, index: int, uuid: str):
-        """
-        Deletes a product from the deserialized JSON file.
+    def delete_product_in_store(self, store_uuid: str, product_uuid: str):
+        i, j = self._locate_nested_entity(["stores", "products"], [store_uuid, product_uuid])
+        del self._data["stores"][i]["products"][j]
+        self._save()
 
-        If the provided index is invalid IndexError is raised.
+    def add_worker_to_store(self, store_uuid: str, worker_uuid: str):
+        index = self._locate_entity("stores", store_uuid)
+        hired_at = int(time.time())
+        self._data["stores"][index]["workers"].append({
+            "uuid": worker_uuid,
+            "hiredAt": hired_at - hired_at % 86400,
+            "saleCount": 0,
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
+        })
+        self._save()
 
-        If nothing matches the provided UUID ValueError is raised.
-        :param index: Index to delete.
-        :param uuid: UUID to delete.
-        """
-        self._delete_value("products", index, uuid)
+    def get_workers_in_store(self, store_uuid: str):
+        index = self._locate_entity("stores", store_uuid)
+        return self._data["stores"][index]["workers"]
 
-    def _edit_value(self, key: str, index: int, uuid: str, payload: dict[str, int | str]):
-        if self._data[key][index]["uuid"] != uuid:
-            raise ValueError("Mismatch between index and UUID")
+    def edit_worker_sales(self, store_uuid: str, worker_uuid: str, sales: int):
+        i, j = self._locate_nested_entity(["stores", "workers"], [store_uuid, worker_uuid])
+        self._data["stores"][i]["workers"][j].update({
+            "saleCount": sales,
+            "updatedAt": f"{int(time.time())}"
+        })
+        self._save()
+
+    def delete_worker_in_store(self, store_uuid: str, worker_uuid: str):
+        i, j = self._locate_nested_entity(["stores", "workers"], [store_uuid, worker_uuid])
+        del self._data["stores"][i]["workers"][j]
+        self._save()
+
+    def add_manager(self, identification: str, manager: Manager):
+        manager_uuid = str(uuid.uuid4())
+        self._data["managers"].append({
+            "uuid": manager_uuid,
+            "identification": identification,
+            "name": manager.name,
+            "lastName": manager.last_name,
+            "phone": manager.phone,
+            "mail": manager.mail,
+            "password": manager.password,
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
+        })
+        self._save()
+        return manager_uuid
+
+    def get_managers(self) -> list:
+        return self._data["managers"]
+
+    def edit_manager(self, manager_uuid: str, manager: Manager):
+        self._edit_entity("managers", manager_uuid, {
+            "name": manager.name,
+            "lastName": manager.last_name,
+            "phone": manager.phone,
+            "mail": manager.mail,
+            "password": manager.password,
+            "updatedAt": f"{int(time.time())}"
+        })
+
+    def delete_manager(self, manager_uuid: str):
+        self._delete_entity("managers", manager_uuid)
+
+    def _edit_entity(self, key: str, entity_uuid: str, payload: dict[str, int | str]):
+        index = self._locate_entity(key, entity_uuid)
         self._data[key][index].update(payload)
         self._save()
 
-    def _delete_value(self, key: str, index: int, uuid: str):
-        if key not in ["stores", "workers", "products"]:
-            return
-        if self._data[key][index]["uuid"] != uuid:
-            raise ValueError("Mismatch between index and UUID")
+    def _delete_entity(self, key: str, entity_uuid: str):
+        index = self._locate_entity(key, entity_uuid)
         del self._data[key][index]
         self._save()
 
+    def _locate_entity(self, key: str, entity_uuid: str):
+        if key not in ["stores", "workers", "products", "managers"]:
+            raise ValueError("Invalid key")
+        for index, value in enumerate(self._data[key]):  # type: int, dict
+            if value["uuid"] == entity_uuid:
+                return index
+        raise ValueError("Entity not found")
+
+    def _locate_nested_entity(self, keys: list[str], entity_uuids: list[str]):
+        if keys[1] not in ["workers", "products"]:
+            raise ValueError("Invalid nested key")
+        i = self._locate_entity(keys[0], entity_uuids[0])
+        for j, value in enumerate(self._data[keys[1]]):  # type: int, dict
+            if value["uuid"] == entity_uuids[1]:
+                return i, j
+        raise ValueError("Nested entity not found")
+
     def _save(self):
         with open("data.json", "w", encoding="utf-8") as file:
-            # for now let's leave the save indentation at 4 for easier reading
+            # TODO: Remove indent for prod
             json.dump(self._data, file, indent=4)
