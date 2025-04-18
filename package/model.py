@@ -1,195 +1,260 @@
+import dataclasses
 import json
-import os
+import time
+import uuid
+
+
+@dataclasses.dataclass
+class Store:
+    name: str
+    address: str
+    city: str
+    phone: str
+    mail: str
+
+
+@dataclasses.dataclass
+class Worker:
+    name: str
+    last_name: str
+    phone: str
+    mail: str
+
+
+@dataclasses.dataclass
+class Product:
+    brand: str
+    model: str
+    category: str
+    description: str
+    price: int
+
+
+@dataclasses.dataclass
+class Manager(Worker):
+    password: str
+
 
 class Model:
     def __init__(self):
-        self.filepath = os.path.join("json", "data.json")
-        if not self.check_file():
-            try:
-                with open(self.filepath, 'r', encoding="utf-8") as data:
-                    json.dump({"isNew": 0}, self.filepath, indent=4)
-            except Exception as e:
-                print(f"is not posible to create the json: {e}")
-
-    def check_file(self):
-        return os.path.exists(self.filepath)
-    def get_data(self):
         try:
-            with open(self.filepath, "r", encoding="utf-8") as data_json:
-                data = json.load(data_json)
-            return data
-        except Exception as e:
-            raise Exception(f"something happend: {e}") from e
-    # modificacion necesaria y terminar conexion con el view pasando el viewmodel:
-    # componente
-    def actualizar_stock(self, cantidad):
-        """
-        Actualiza el stock del componente.
-        
-        Args:
-            cantidad (int): Cantidad a añadir (positivo) o quitar (negativo) del stock
-            
-        Returns:
-            bool: True si la operación fue exitosa, False en caso contrario
-        """
-        nuevo_stock = self.stock + cantidad
-        if nuevo_stock >= 0:
-            self.stock = nuevo_stock
-            return True
-        return False
+            with open("data.json", encoding="utf-8") as file:
+                self._data: dict = json.load(file)
+        except FileNotFoundError:
+            self._data = json.loads('{"stores": [], "workers": [], "products": [], "managers": []}')
+            self._save()
+        except json.decoder.JSONDecodeError as e:
+            raise RuntimeError(f"JSON decoding error, manual intervention needed: {e}") from e
 
-    def obtener_info_completa(self):
-        """
-        Retorna la información completa del componente.
-        
-        Returns:
-            dict: Diccionario con todos los atributos del componente
-        """
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "tipo": self.tipo,
-            "marca": self.marca,
-            "precio": self.precio,
-            "stock": self.stock,
-            "descripcion": self.descripcion
-        }
-    # ---
-    # vendedor
-    def registrar_venta(self, venta: list):
-        """
-        Registra una nueva venta realizada por el vendedor.
-        
-        Args:
-            venta (Venta): Objeto venta a registrar
-            
-        Returns:
-            bool: True si se registró correctamente
-        """
-        self.ventas.append(venta)
-        return True
+    def add_store(self, store: Store):
+        store_uuid = str(uuid.uuid4())
+        self._data["stores"].append({
+            "uuid": store_uuid,
+            "name": store.name,
+            "address": store.address,
+            "city": store.city,
+            "phone": store.phone,
+            "mail": store.mail,
+            "workers": [],
+            "products": [],
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
+        })
+        self._save()
+        return store_uuid
 
-    def calcular_comisiones(self, mes, anio):
-        """
-        Calcula las comisiones del vendedor en un período específico.
-        
-        Args:
-            mes (int): Mes para calcular comisiones
-            anio (int): Año para calcular comisiones
-            
-        Returns:
-            float: Total de comisiones del período
-        """
-        total_ventas = 0
-        for venta in self.ventas:
-            if venta.mes == mes and venta.anio == anio:
-                total_ventas += venta.total
+    def add_worker(self, worker: Worker):
+        worker_uuid = str(uuid.uuid4())
+        self._data["workers"].append({
+            "uuid": worker_uuid,
+            "name": worker.name,
+            "lastName": worker.last_name,
+            "phone": worker.phone,
+            "mail": worker.mail,
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
+        })
+        self._save()
+        return worker_uuid
 
-        # Comisión del 5% sobre el total de ventas
-        return total_ventas * 0.05
+    def add_product(self, product: Product):
+        product_uuid = str(uuid.uuid4())
+        self._data["products"].append({
+            "uuid": product_uuid,
+            "brand": product.brand,
+            "model": product.model,
+            "category": product.category,
+            "description": product.description,
+            "price": product.price,
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
+        })
+        self._save()
+        return product_uuid
 
-    def obtener_info_vendedor(self):
-        """
-        Retorna la información del vendedor.
-        
-        Returns:
-            dict: Diccionario con los datos del vendedor
-        """
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "apellido": self.apellido,
-            "email": self.email,
-            "telefono": self.telefono,
-            "tienda": self.tienda.nombre if self.tienda else None,
-            "fecha_contratacion": self.fecha_contratacion
-        }
-    # ---
-    # tienda
-    def agregar_vendedor(self, vendedor):
-        """
-        Agrega un vendedor a la tienda.
-        
-        Args:
-            vendedor (Vendedor): Vendedor a agregar
-            
-        Returns:
-            bool: True si se agregó correctamente
-        """
-        if vendedor not in self.vendedores:
-            self.vendedores.append(vendedor)
-            vendedor.tienda = self
-            return True
-        return False
+    def get_stores(self) -> list:
+        return self._data["stores"]
 
-    def agregar_componente(self, componente, cantidad=1):
-        """
-        Agrega un componente al inventario de la tienda.
-        
-        Args:
-            componente (Componente): Componente a agregar
-            cantidad (int, optional): Cantidad a agregar. Default es 1.
-            
-        Returns:
-            bool: True si se agregó correctamente
-        """
-        if componente.id in self.inventario:
-            self.inventario[componente.id]["cantidad"] += cantidad
-        else:
-            self.inventario[componente.id] = {
-                "componente": componente,
-                "cantidad": cantidad
-            }
-        return True
+    def get_workers(self) -> list:
+        return self._data["workers"]
 
-    def buscar_componente(self, id_componente):
-        """
-        Busca un componente en el inventario de la tienda.
-        
-        Args:
-            id_componente (int): ID del componente a buscar
-            
-        Returns:
-            dict: Información del componente si existe, None en caso contrario
-        """
-        if id_componente in self.inventario:
-            return self.inventario[id_componente]
-        return None
+    def get_products(self) -> list:
+        return self._data["products"]
 
-    def listar_componentes_por_tipo(self, tipo):
-        """
-        Lista todos los componentes de un tipo específico.
-        
-        Args:
-            tipo (str): Tipo de componente a buscar (RAM, Procesador, etc.)
-            
-        Returns:
-            list: Lista de componentes del tipo especificado
-        """
-        componentes = []
-        for item in self.inventario.values():
-            if item["componente"].tipo == tipo:
-                componentes.append({
-                    "componente": item["componente"],
-                    "cantidad": item["cantidad"]
-                })
-        return componentes
+    def edit_store(self, store_uuid: str, store: Store):
+        self._edit_entity("stores", store_uuid, {
+            "name": store.name,
+            "address": store.address,
+            "city": store.city,
+            "phone": store.phone,
+            "mail": store.mail,
+            "updatedAt": f"{int(time.time())}"
+        })
 
-    def obtener_info_tienda(self):
-        """
-        Retorna la información de la tienda.
-        
-        Returns:
-            dict: Diccionario con los datos de la tienda
-        """
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "direccion": self.direccion,
-            "ciudad": self.ciudad,
-            "telefono": self.telefono,
-            "email": self.email,
-            "horario": f"{self.horario_apertura} - {self.horario_cierre}",
-            "vendedores": len(self.vendedores),
-            "componentes_distintos": len(self.inventario)
-        }
+    def edit_worker(self, worker_uuid: str, worker: Worker):
+        self._edit_entity("workers", worker_uuid, {
+            "name": worker.name,
+            "lastName": worker.last_name,
+            "phone": worker.phone,
+            "mail": worker.mail,
+            "updatedAt": f"{int(time.time())}"
+        })
+
+    def edit_product(self, product_uuid: str, product: Product):
+        self._edit_entity("products", product_uuid, {
+            "brand": product.brand,
+            "model": product.model,
+            "category": product.category,
+            "description": product.description,
+            "price": product.price,
+            "updatedAt": f"{int(time.time())}"
+        })
+
+    def delete_store(self, store_uuid: str):
+        self._delete_entity("stores", store_uuid)
+
+    def delete_worker(self, worker_uuid: str):
+        self._delete_entity("workers", worker_uuid)
+
+    def delete_product(self, product_uuid: str):
+        self._delete_entity("products", product_uuid)
+
+    def add_product_to_store(self, store_uuid: str, product_uuid: str):
+        index = self._locate_entity("stores", store_uuid)
+        self._data["stores"][index]["products"].append({
+            "uuid": product_uuid,
+            "inStock": None,
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
+        })
+        self._save()
+
+    def get_products_in_store(self, store_uuid: str):
+        index = self._locate_entity("stores", store_uuid)
+        return self._data["stores"][index]["products"]
+
+    def edit_product_stock(self, store_uuid: str, product_uuid: str, stock: int):
+        i, j = self._locate_nested_entity(["stores", "products"], [store_uuid, product_uuid])
+        self._data["stores"][i]["products"][j].update({
+            "inStock": stock,
+            "updatedAt": f"{int(time.time())}"
+        })
+        self._save()
+
+    def delete_product_in_store(self, store_uuid: str, product_uuid: str):
+        i, j = self._locate_nested_entity(["stores", "products"], [store_uuid, product_uuid])
+        del self._data["stores"][i]["products"][j]
+        self._save()
+
+    def add_worker_to_store(self, store_uuid: str, worker_uuid: str):
+        index = self._locate_entity("stores", store_uuid)
+        hired_at = int(time.time())
+        self._data["stores"][index]["workers"].append({
+            "uuid": worker_uuid,
+            "hiredAt": hired_at - hired_at % 86400,
+            "saleCount": 0,
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
+        })
+        self._save()
+
+    def get_workers_in_store(self, store_uuid: str):
+        index = self._locate_entity("stores", store_uuid)
+        return self._data["stores"][index]["workers"]
+
+    def edit_worker_sales(self, store_uuid: str, worker_uuid: str, sales: int):
+        i, j = self._locate_nested_entity(["stores", "workers"], [store_uuid, worker_uuid])
+        self._data["stores"][i]["workers"][j].update({
+            "saleCount": sales,
+            "updatedAt": f"{int(time.time())}"
+        })
+        self._save()
+
+    def delete_worker_in_store(self, store_uuid: str, worker_uuid: str):
+        i, j = self._locate_nested_entity(["stores", "workers"], [store_uuid, worker_uuid])
+        del self._data["stores"][i]["workers"][j]
+        self._save()
+
+    def add_manager(self, identification: str, manager: Manager):
+        manager_uuid = str(uuid.uuid4())
+        self._data["managers"].append({
+            "uuid": manager_uuid,
+            "identification": identification,
+            "name": manager.name,
+            "lastName": manager.last_name,
+            "phone": manager.phone,
+            "mail": manager.mail,
+            "password": manager.password,
+            "createdAt": f"{int(time.time())}",
+            "updatedAt": None
+        })
+        self._save()
+        return manager_uuid
+
+    def get_managers(self) -> list:
+        return self._data["managers"]
+
+    def edit_manager(self, manager_uuid: str, manager: Manager):
+        self._edit_entity("managers", manager_uuid, {
+            "name": manager.name,
+            "lastName": manager.last_name,
+            "phone": manager.phone,
+            "mail": manager.mail,
+            "password": manager.password,
+            "updatedAt": f"{int(time.time())}"
+        })
+
+    def delete_manager(self, manager_uuid: str):
+        self._delete_entity("managers", manager_uuid)
+
+    def _edit_entity(self, key: str, entity_uuid: str, payload: dict[str, int | str]):
+        index = self._locate_entity(key, entity_uuid)
+        self._data[key][index].update(payload)
+        self._save()
+
+    def _delete_entity(self, key: str, entity_uuid: str):
+        index = self._locate_entity(key, entity_uuid)
+        del self._data[key][index]
+        self._save()
+
+    def _locate_entity(self, key: str, entity_uuid: str):
+        if key not in ["stores", "workers", "products", "managers"]:
+            raise ValueError("Invalid key")
+        for index, value in enumerate(self._data[key]):  # type: int, dict
+            if value["uuid"] == entity_uuid:
+                return index
+        raise ValueError("Entity not found")
+
+    def _locate_nested_entity(self, keys: list[str], entity_uuids: list[str]):
+        if keys[1] not in ["workers", "products"]:
+            raise ValueError("Invalid nested key")
+        i = self._locate_entity(keys[0], entity_uuids[0])
+        for j, value in enumerate(self._data[keys[1]]):  # type: int, dict
+            if value["uuid"] == entity_uuids[1]:
+                return i, j
+        raise ValueError("Nested entity not found")
+
+    def _save(self):
+        with open("data.json", "w", encoding="utf-8") as file:
+            # TODO: Remove indent for prod
+            json.dump(self._data, file, indent=4)
